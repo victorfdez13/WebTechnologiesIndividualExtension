@@ -526,15 +526,147 @@ document.getElementById("deletePlaylistBtn").addEventListener("click", async () 
   }
 
   if (songForm) {
+    const songInputs = {
+      title: document.getElementById('titleInput'),
+      artist: document.getElementById('artistInput'),
+      genre: document.getElementById('genreInput'),
+      year: document.getElementById('yearInput'),
+      duration: document.getElementById('durationInput'),
+      url: document.getElementById('urlInput'),
+    };
+    const songFeedback = {
+      title: document.getElementById('titleFeedback'),
+      artist: document.getElementById('artistFeedback'),
+      genre: document.getElementById('genreFeedback'),
+      year: document.getElementById('yearFeedback'),
+      duration: document.getElementById('durationFeedback'),
+      url: document.getElementById('urlFeedback'),
+    };
+    const maxTextLength = 255;
+
+    const isValidUrl = (value) => {
+      try {
+        const parsed = new URL(value);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      } catch (err) {
+        return false;
+      }
+    };
+
+    const getFieldMessage = (key, rawValue) => {
+      let message = '';
+
+      if (key === 'title') {
+        if (!rawValue) message = 'Please enter the song title.';
+        else if (rawValue.length > maxTextLength) message = 'Title must be 255 characters or less.';
+      }
+
+      if (key === 'artist') {
+        if (!rawValue) message = 'Please enter the artist name.';
+        else if (rawValue.length > maxTextLength) message = 'Artist must be 255 characters or less.';
+      }
+
+      if (key === 'genre') {
+        if (!rawValue) {
+          message = 'Please enter the genre.';
+        } else if (rawValue.length > maxTextLength) {
+          message = 'Genre must be 255 characters or less.';
+        }
+      }
+
+      if (key === 'year') {
+        if (!rawValue) {
+          message = 'Please enter the release year.';
+        } else if (!/^\d{4}$/.test(rawValue)) {
+          message = 'Year must be 4 digits.';
+        } else {
+          const yearValue = Number(rawValue);
+          if (yearValue < 1900) {
+            message = 'Year must be 1900 or later.';
+          } else if (yearValue > 2100) {
+            message = 'Year must be between 1900 and 2100.';
+          }
+        }
+      }
+
+      if (key === 'duration') {
+        if (!rawValue) {
+          message = 'Please enter the duration in seconds.';
+        } else {
+          const durationValue = Number(rawValue);
+          if (!Number.isFinite(durationValue) || !Number.isInteger(durationValue) || durationValue < 1) {
+            message = 'Duration must be a whole number of seconds.';
+          }
+        }
+      }
+
+      if (key === 'url') {
+        if (!rawValue) {
+          message = 'Please add an MP3 link.';
+        } else if (rawValue.length > maxTextLength) {
+          message = 'URL must be 255 characters or less.';
+        } else if (!/\.mp3(\?.*)?$/i.test(rawValue)) {
+          message = 'URL must end with .mp3.';
+        } else if (!isValidUrl(rawValue)) {
+          message = 'Please enter a valid URL.';
+        }
+      }
+
+      return message;
+    };
+
+    const setFeedback = (key, message) => {
+      const input = songInputs[key];
+      const feedback = songFeedback[key];
+      if (!input || !feedback) return;
+
+      const hasError = Boolean(message);
+      feedback.textContent = hasError ? message : '';
+      feedback.classList.toggle('is-visible', hasError);
+      input.classList.toggle('is-invalid', hasError);
+      input.setAttribute('aria-invalid', hasError ? 'true' : 'false');
+    };
+
+    const clearFeedback = () => {
+      Object.keys(songInputs).forEach((key) => {
+        setFeedback(key, '');
+      });
+    };
+
+    const validateField = (key, show = true) => {
+      const input = songInputs[key];
+      if (!input) return true;
+
+      const rawValue = input.value.trim();
+      const message = getFieldMessage(key, rawValue);
+      if (show) setFeedback(key, message);
+      return message;
+    };
+
+    const showFirstInvalid = () => {
+      clearFeedback();
+      for (const key of Object.keys(songInputs)) {
+        const message = validateField(key, false);
+        if (message) {
+          setFeedback(key, message);
+          songInputs[key]?.focus();
+          return false;
+        }
+      }
+      return true;
+    };
+
+    songForm.addEventListener('reset', () => {
+      clearFeedback();
+    });
+
+    clearFeedback();
     songForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!showFirstInvalid()) return;
       const f = new FormData(songForm);
 
       const duration = Number(f.get('duration'));
-      if (!duration || isNaN(duration) || duration < 1) {
-        alert('Duration must be a positive number of seconds');
-        return;
-      }
       const data = {
         title: (f.get('title') || '').trim(),
         artist: (f.get('artist') || '').trim(),
@@ -543,11 +675,6 @@ document.getElementById("deletePlaylistBtn").addEventListener("click", async () 
         duration: duration,
         url: (f.get('url') || '').trim(),
       };
-
-      if (!data.title || !data.artist || !data.url || !data.duration) {
-        alert('Title, artist, duration and url required');
-        return;
-      }
 
       try {
         const res = await apiCreateSong(data);

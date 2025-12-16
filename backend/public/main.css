@@ -176,6 +176,13 @@ body::before {
   transform: scale(0.97);
 }
 
+.primary-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
 .primary-btn.secondary {
   background: transparent;
   border-color: rgba(255, 255, 255, 0.16);
@@ -723,6 +730,25 @@ body::before {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px rgba(255, 107, 203, 0.6);
   background: rgba(7, 10, 32, 1);
+}
+
+.form-field input.is-invalid {
+  border-color: rgba(255, 120, 140, 0.9);
+  box-shadow: 0 0 0 1px rgba(255, 120, 140, 0.35);
+}
+
+.field-feedback {
+  min-height: 16px;
+  font-size: 0.75rem;
+  color: rgba(255, 120, 140, 0.95);
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.field-feedback.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .songs-list {

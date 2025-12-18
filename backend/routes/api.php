@@ -11,11 +11,11 @@ Route::get('/songs', [SongController::class, 'index']);
 Route::get('/songs/favorites', [SongController::class, 'getFavorites']);
 Route::post('/songs', [SongController::class, 'store']);
 Route::patch('/songs/{id}/favorite', [SongController::class, 'toggleFavorite']);
+Route::delete('/songs/{id}', [SongController::class, 'destroy']);
 
 // Songs - Protected mutations
 Route::middleware('auth')->group(function () {
     Route::put('/songs/{id}', [SongController::class, 'update'])->middleware('admin.api');
-    Route::delete('/songs/{id}', [SongController::class, 'destroy'])->middleware('admin.api');
 });
 
 // Stats
